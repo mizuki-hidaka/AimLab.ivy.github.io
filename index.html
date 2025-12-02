@@ -662,12 +662,18 @@
             target.style.left = Math.random() * (containerRect.width - sizePixels - margin * 2) + margin + 'px';
             target.style.top = Math.random() * (containerRect.height - sizePixels - margin * 2) + margin + 'px';
 
-            target.addEventListener('touchstart', (e) => { 
-                e.preventDefault(); 
+            // タッチイベントを先に処理
+            target.addEventListener('touchend', (e) => { 
+                e.preventDefault();
+                e.stopPropagation();
                 handleTargetClick(e); 
             }, { passive: false });
             
-            target.addEventListener('click', handleTargetClick);
+            // クリックイベント（PC用）
+            target.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleTargetClick(e);
+            });
 
             gameContainer.appendChild(target);
             gameState.currentTarget = target;
@@ -675,18 +681,22 @@
             startTargetTimer();
         }
 
-        gameContainer.addEventListener('touchstart', (e) => { 
-            if (e.target === gameContainer || e.target.classList.contains('overlay')) {
-                e.preventDefault(); 
+        gameContainer.addEventListener('touchend', (e) => { 
+            if (e.target === gameContainer) {
+                e.preventDefault();
+                e.stopPropagation();
                 handleGameAreaClick(e); 
             }
         }, { passive: false });
 
-        gameContainer.addEventListener('click', handleGameAreaClick);
+        gameContainer.addEventListener('click', (e) => {
+            if (e.target === gameContainer) {
+                handleGameAreaClick(e);
+            }
+        });
 
         function handleTargetClick(e) {
             if (!gameState.isGameActive) return;
-            e.stopPropagation();
 
             const sizeClass = e.currentTarget.dataset.sizeClass;
             const baseScore = sizeScoreMap[sizeClass] || 1;
@@ -699,9 +709,12 @@
             gameState.combo++;
             comboDisplay.textContent = gameState.combo;
 
-            const touch = e.touches ? e.touches[0] : e;
+            // タッチとクリックの両方に対応
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            
             const text = gameState.combo > 1 ? `COMBO x${gameState.combo} (+${points})` : `+${points}`;
-            showFeedback(touch.clientX, touch.clientY, text, gameState.combo > 1 ? 'combo-bonus' : 'success');
+            showFeedback(clientX, clientY, text, gameState.combo > 1 ? 'combo-bonus' : 'success');
 
             createTarget();
         }
@@ -719,8 +732,11 @@
             gameState.combo = 0;
             comboDisplay.textContent = gameState.combo;
             
-            const touch = e.touches ? e.touches[0] : e;
-            showFeedback(touch.clientX, touch.clientY, `MISS (-${penalty})`, 'miss');
+            // タッチとクリックの両方に対応
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            
+            showFeedback(clientX, clientY, `MISS (-${penalty})`, 'miss');
 
             createTarget();
         }
