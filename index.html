@@ -3,13 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AimLab - Target Clicking Game</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -20,21 +21,22 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            touch-action: none;
         }
 
-        /* ヘッダー */
         .header {
             background-color: #ffffff;
             border-bottom: 2px solid #333333;
-            padding: 20px 30px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
         }
 
         .title {
-            font-size: 28px;
+            font-size: 18px;
             font-weight: 700;
             color: #333333;
             letter-spacing: -0.5px;
@@ -42,7 +44,7 @@
 
         .stats {
             display: flex;
-            gap: 40px;
+            gap: 15px;
             align-items: center;
         }
 
@@ -53,16 +55,16 @@
         }
 
         .stat-label {
-            font-size: 12px;
+            font-size: 9px;
             font-weight: 600;
             color: #666666;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
 
         .stat-value {
-            font-size: 36px;
+            font-size: 20px;
             font-weight: 700;
             color: #333333;
             line-height: 1;
@@ -76,32 +78,28 @@
             color: #dc2626;
         }
 
-        /* 新しいタイマー表示のスタイル */
         .stat-value.game-time {
             color: #059669;
         }
 
-        /* 新しいコンボ表示のスタイル */
         .stat-value.combo {
             color: #f59e0b;
-            /* 黄色/オレンジ系 */
-            font-size: 30px;
-            /* 少し小さめに */
+            font-size: 18px;
         }
 
         .stat-item.combo .stat-label {
             color: #f59e0b;
         }
 
-        /* ゲームエリア */
         .game-container {
             flex: 1;
             position: relative;
             background-color: #ffffff;
             cursor: crosshair;
+            touch-action: none;
+            overflow: hidden;
         }
 
-        /* ターゲット */
         .target {
             position: absolute;
             border-radius: 50%;
@@ -111,15 +109,13 @@
             justify-content: center;
             font-weight: 700;
             color: white;
-            font-size: 24px;
             user-select: none;
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             animation: targetAppear 0.3s ease-out;
-            position: relative;
+            touch-action: none;
         }
 
-        /* ターゲットタイマー（ボーダー） */
         .target::before {
             content: '';
             position: absolute;
@@ -129,13 +125,11 @@
             height: 100%;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-            /* JavaScriptでanimationを制御するため、初期設定を削除 */
             pointer-events: none;
         }
 
         .target.timed-out::before {
             animation: none;
-            /* タイムアウトしたターゲットのボーダーアニメーションを停止 */
             box-shadow: inset 0 0 0 3px rgba(100, 100, 100, 0.8);
         }
 
@@ -144,23 +138,16 @@
                 opacity: 0;
                 transform: scale(0.5);
             }
-
             to {
                 opacity: 1;
                 transform: scale(1);
             }
         }
 
-        .target:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-        }
-
         .target:active {
             transform: scale(0.95);
         }
 
-        /* タイマー警告（時間後半） */
         .target.warning::before {
             animation: timerWarning 1.5s linear forwards;
         }
@@ -169,47 +156,32 @@
             0% {
                 box-shadow: inset 0 0 0 3px rgba(255, 0, 0, 0.8);
             }
-
             50% {
                 box-shadow: inset 0 0 0 3px rgba(255, 100, 100, 0.8);
             }
-
             100% {
                 box-shadow: inset 0 0 0 3px rgba(255, 0, 0, 0.8);
             }
         }
 
-        /* タイマー表示 */
-        .target-timer {
-            position: absolute;
-            font-size: 12px;
-            font-weight: 700;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        /* ターゲットサイズ */
         .target-small {
-            width: 40px;
-            height: 40px;
-            font-size: 16px;
+            width: 55px;
+            height: 55px;
+            font-size: 18px;
         }
 
         .target-medium {
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
+            width: 75px;
+            height: 75px;
+            font-size: 26px;
         }
 
         .target-large {
-            width: 80px;
-            height: 80px;
-            font-size: 32px;
+            width: 95px;
+            height: 95px;
+            font-size: 36px;
         }
 
-        /* ターゲットの色パターン */
         .target-red {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         }
@@ -235,10 +207,9 @@
             background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
         }
 
-        /* フィードバック表示 */
         .feedback {
             position: fixed;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             pointer-events: none;
             animation: feedbackFloat 0.6s ease-out forwards;
@@ -246,9 +217,8 @@
         }
 
         .feedback.combo-bonus {
-            font-size: 32px;
+            font-size: 28px;
             color: #f59e0b;
-            /* コンボボーナスはオレンジ */
             text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
         }
 
@@ -257,7 +227,6 @@
                 opacity: 1;
                 transform: translateY(0) scale(1);
             }
-
             100% {
                 opacity: 0;
                 transform: translateY(-40px) scale(0.8);
@@ -272,7 +241,6 @@
             color: #dc2626;
         }
 
-        /* オーバーレイとスタート/リセット画面 */
         .overlay {
             position: absolute;
             top: 0;
@@ -286,99 +254,104 @@
             align-items: center;
             z-index: 50;
             text-align: center;
+            padding: 20px;
         }
 
         .overlay-content h2 {
-            font-size: 36px;
+            font-size: 26px;
             color: #333333;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .overlay-content p {
-            font-size: 18px;
+            font-size: 14px;
             color: #666666;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
-        /* 難易度選択 */
-        .difficulty-selection {
-            margin-bottom: 40px;
+        .selection-group {
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .selection-group h3 {
+            margin-bottom: 10px;
+            color: #333333;
+            font-size: 16px;
+        }
+
+        .difficulty-selection,
+        #timeSelection {
             display: flex;
-            gap: 15px;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        .difficulty-selection button {
-            padding: 10px 20px;
+        #difficultySelection button,
+        #timeSelection button {
+            padding: 10px 18px;
             background-color: #e5e7eb;
             color: #333333;
             border: 2px solid #ccc;
             border-radius: 6px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
+            touch-action: manipulation;
+            min-width: 70px;
         }
 
-        .difficulty-selection button:hover {
-            background-color: #d1d5db;
+        #difficultySelection button:active,
+        #timeSelection button:active {
+            transform: scale(0.95);
         }
 
-        .difficulty-selection button.selected {
+        #difficultySelection button.selected,
+        #timeSelection button.selected {
             background-color: #2563eb;
             color: white;
             border-color: #1d4ed8;
             box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
         }
 
-        /* スタートボタン / リセットボタン（大型） */
         .start-button,
         .end-button {
-            padding: 15px 40px;
+            padding: 14px 35px;
             background-color: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
             transition: all 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-
-        .start-button:hover,
-        .end-button:hover {
-            background-color: #1d4ed8;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
-            transform: translateY(-2px);
+            touch-action: manipulation;
         }
 
         .start-button:active,
         .end-button:active {
-            transform: translateY(0);
+            transform: scale(0.95);
         }
 
-        /* ゲーム終了スコア表示 */
         .final-score {
-            margin-top: 20px;
-            font-size: 48px;
+            margin-top: 15px;
+            font-size: 36px;
             font-weight: 800;
             color: #2563eb;
         }
 
-        .reset-button {
-            display: none;
-            /* ゲームオーバーレイに統合するため非表示 */
-        }
-
-        /* タイマー警告表示 */
         .timer-warning {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 48px;
+            font-size: 32px;
             font-weight: 700;
             color: #dc2626;
             pointer-events: none;
@@ -391,115 +364,93 @@
                 opacity: 1;
                 transform: translate(-50%, -50%) scale(1);
             }
-
             100% {
                 opacity: 0;
                 transform: translate(-50%, -50%) scale(1.5);
             }
         }
 
-        /* レスポンシブ */
-        @media (max-width: 768px) {
+        #homeButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            touch-action: manipulation;
+        }
+
+        @media (min-width: 769px) {
             .header {
-                padding: 15px 20px;
+                padding: 20px 30px;
             }
 
             .title {
-                font-size: 22px;
-            }
-
-            .stats {
-                gap: 20px;
-            }
-
-            .stat-value {
                 font-size: 28px;
             }
 
+            .stats {
+                gap: 40px;
+            }
+
+            .stat-label {
+                font-size: 12px;
+            }
+
+            .stat-value {
+                font-size: 36px;
+            }
+
             .stat-value.combo {
-                font-size: 24px;
+                font-size: 30px;
             }
 
             .target-small {
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
             }
 
             .target-medium {
-                width: 50px;
-                height: 50px;
-                font-size: 18px;
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
             }
 
             .target-large {
-                width: 65px;
-                height: 65px;
-                font-size: 24px;
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+
+            .overlay-content h2 {
+                font-size: 36px;
+            }
+
+            .overlay-content p {
+                font-size: 18px;
+            }
+
+            .selection-group h3 {
+                font-size: 20px;
             }
 
             .start-button,
             .end-button {
-                padding: 10px 20px;
-                font-size: 18px;
-            }
-
-            .overlay-content h2 {
-                font-size: 28px;
+                font-size: 24px;
+                padding: 15px 40px;
             }
 
             .final-score {
-                font-size: 40px;
+                font-size: 48px;
             }
-        }
 
-        /* ... 既存のCSS ... */
+            .feedback {
+                font-size: 24px;
+            }
 
-        .selection-group {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .selection-group h3 {
-            margin-bottom: 10px;
-            color: #fff;
-            font-size: 1.2em;
-        }
-
-        /* 難易度/時間選択ボタンの共通スタイル */
-        #difficultySelection button,
-        #timeSelection button {
-            background: #444;
-            color: #ddd;
-            border: 2px solid #666;
-            padding: 8px 15px;
-            margin: 0 5px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: all 0.2s;
-        }
-
-        #difficultySelection button:hover,
-        #timeSelection button:hover {
-            background: #555;
-            border-color: #aaa;
-        }
-
-        #difficultySelection button.selected,
-        #timeSelection button.selected {
-            background: #00bcd4;
-            /* シアン系の色 */
-            color: #000;
-            border-color: #fff;
-            font-weight: bold;
-            transform: scale(1.05);
-        }
-
-        #homeButton {
-            padding: 10px 20px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
+            .feedback.combo-bonus {
+                font-size: 32px;
+            }
         }
     </style>
 </head>
@@ -531,21 +482,25 @@
         <div class="overlay" id="overlayGame">
             <div class="overlay-content">
                 <h2 id="overlayTitle">Welcome to Aim Training!</h2>
-                <p id="overlayMessage">Click the targets as fast as you can. Choose time and difficulty:</p>
+                <p id="overlayMessage">Tap targets as fast as you can!</p>
 
                 <div id="timeSelection" class="selection-group">
                     <h3>⏰ Game Time</h3>
-                    <button data-time="15" class="time-button">15s</button>
-                    <button data-time="30" class="time-button selected">30s</button>
-                    <button data-time="45" class="time-button">45s</button>
-                    <button data-time="60" class="time-button">60s</button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button data-time="15" class="time-button">15s</button>
+                        <button data-time="30" class="time-button selected">30s</button>
+                        <button data-time="45" class="time-button">45s</button>
+                        <button data-time="60" class="time-button">60s</button>
+                    </div>
                 </div>
 
                 <div id="difficultySelection" class="difficulty-selection selection-group">
                     <h3>⚙️ Difficulty</h3>
-                    <button data-difficulty="easy">Easy</button>
-                    <button data-difficulty="normal" class="selected">Normal</button>
-                    <button data-difficulty="hard">Hard</button>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button data-difficulty="easy">Easy</button>
+                        <button data-difficulty="normal" class="selected">Normal</button>
+                        <button data-difficulty="hard">Hard</button>
+                    </div>
                 </div>
 
                 <button class="start-button" id="startButton">Start Game</button>
@@ -558,9 +513,9 @@
         let GAME_DURATION = 30000;
 
         const difficultySettings = {
-            easy: { defaultSize: 'large', targetLifetime: 4000, scoreMultiplier: 0.5, comboBonus: 0.5, missPenalty: 5, message: 'Large targets, long lifetime (4.0s). Good for beginners.' },
-            normal: { defaultSize: 'medium', targetLifetime: 3000, scoreMultiplier: 1.0, comboBonus: 1.0, missPenalty: 10, message: 'Medium targets, standard lifetime (3.0s). Balanced difficulty.' },
-            hard: { defaultSize: 'small', targetLifetime: 2000, scoreMultiplier: 1.5, comboBonus: 1.5, missPenalty: 15, message: 'Small targets, short lifetime (2.0s). Challenge your precision!' }
+            easy: { defaultSize: 'large', targetLifetime: 4000, scoreMultiplier: 0.5, comboBonus: 0.5, missPenalty: 5 },
+            normal: { defaultSize: 'medium', targetLifetime: 3000, scoreMultiplier: 1.0, comboBonus: 1.0, missPenalty: 10 },
+            hard: { defaultSize: 'small', targetLifetime: 2000, scoreMultiplier: 1.5, comboBonus: 1.5, missPenalty: 15 }
         };
 
         const gameState = {
@@ -594,21 +549,26 @@
             scoreDisplay.textContent = 0;
             comboDisplay.textContent = 0;
             missDisplay.textContent = 0;
+            gameTimeDisplay.textContent = (GAME_DURATION / 1000).toFixed(2);
 
             clearInterval(gameState.gameTimer);
-            if (gameState.currentTarget) { gameState.currentTarget.remove(); gameState.currentTarget = null; }
+            if (gameState.currentTarget) { 
+                gameState.currentTarget.remove(); 
+                gameState.currentTarget = null; 
+            }
 
             overlayTitle.textContent = "Ready to start?";
-            overlayMessage.textContent = "Select time and difficulty, then press Start Game!";
+            overlayMessage.textContent = "Tap targets as fast as you can!";
             startButton.textContent = "Start Game";
             startButton.classList.add("start-button");
             startButton.classList.remove("end-button");
 
-            difficultySelection.style.display = "flex";
-            timeSelection.style.display = "flex";
+            difficultySelection.style.display = "block";
+            timeSelection.style.display = "block";
+            finalScoreDisplay.style.display = "none";
 
             let homeBtn = document.getElementById("homeButton");
-            if (homeBtn) homeBtn.style.display = "none";
+            if (homeBtn) homeBtn.remove();
 
             overlayGame.style.display = "flex";
         }
@@ -616,8 +576,6 @@
         function startGame() {
             gameState.isGameActive = true;
             overlayGame.style.display = 'none';
-            difficultySelection.style.display = 'none';
-            timeSelection.style.display = 'none';
             gameState.gameStartTime = Date.now();
             startGlobalTimer();
             createTarget();
@@ -628,7 +586,12 @@
             gameState.gameTimer = setInterval(() => {
                 const elapsed = Date.now() - gameState.gameStartTime;
                 const remaining = GAME_DURATION - elapsed;
-                if (remaining <= 0) { clearInterval(gameState.gameTimer); gameTimeDisplay.textContent = '0.00'; endGame(); return; }
+                if (remaining <= 0) { 
+                    clearInterval(gameState.gameTimer); 
+                    gameTimeDisplay.textContent = '0.00'; 
+                    endGame(); 
+                    return; 
+                }
                 gameTimeDisplay.textContent = (remaining / 1000).toFixed(2);
             }, 10);
         }
@@ -636,14 +599,21 @@
         function endGame() {
             gameState.isGameActive = false;
             stopTargetTimer();
-            if (gameState.currentTarget) { gameState.currentTarget.remove(); gameState.currentTarget = null; }
+            if (gameState.currentTarget) { 
+                gameState.currentTarget.remove(); 
+                gameState.currentTarget = null; 
+            }
 
             overlayTitle.textContent = 'Game Over!';
-            overlayMessage.textContent = `Time is up! You clicked ${gameState.score} targets. Missed: ${gameState.miss}.`;
+            overlayMessage.textContent = `Time is up! You hit ${gameState.score} targets. Missed: ${gameState.miss}.`;
             finalScoreDisplay.textContent = `Final Score: ${gameState.score}`;
             finalScoreDisplay.style.display = 'block';
             startButton.textContent = 'Play Again';
-            startButton.classList.remove('start-button'); startButton.classList.add('end-button');
+            startButton.classList.remove('start-button'); 
+            startButton.classList.add('end-button');
+
+            difficultySelection.style.display = 'none';
+            timeSelection.style.display = 'none';
 
             showHomeButton();
             overlayGame.style.display = 'flex';
@@ -656,20 +626,20 @@
                 homeBtn.id = "homeButton";
                 homeBtn.textContent = "🏠 Home";
                 homeBtn.className = "end-button";
-                homeBtn.style.marginTop = "10px";
-                overlayGame.appendChild(homeBtn);
+                document.querySelector('.overlay-content').appendChild(homeBtn);
             }
-            homeBtn.style.display = "block";
-            homeBtn.onclick = () => { resetGame(); homeBtn.style.display = "none"; };
+            homeBtn.onclick = () => { resetGame(); };
         }
 
         function getRandomSize() {
-            // 難易度に応じて固定サイズを返す（ランダム要素なし）
             return difficultySettings[gameState.currentDifficulty].defaultSize;
         }
 
         function getSizeInPixels(sizeClass) {
-            const sizeMap = { 'target-small': 40, 'target-medium': 60, 'target-large': 80 };
+            const sizeMap = { 'target-small': 55, 'target-medium': 75, 'target-large': 95 };
+            if (window.innerWidth > 768) {
+                return { 'target-small': 40, 'target-medium': 60, 'target-large': 80 }[sizeClass];
+            }
             return sizeMap[sizeClass];
         }
 
@@ -682,24 +652,22 @@
             const color = colors[Math.floor(Math.random() * colors.length)];
             target.classList.add(`target-${color}`);
 
-            // スマホ対応サイズ調整
             const sizeClass = getRandomSize();
-            let sizePixels = getSizeInPixels(`target-${sizeClass}`);
-            if (window.innerWidth <= 768) { // スマホの場合
-                sizePixels = sizePixels * 1.2; // 1.2倍にして押しやすく
-            }
+            const sizePixels = getSizeInPixels(`target-${sizeClass}`);
             target.classList.add(`target-${sizeClass}`);
             target.dataset.sizeClass = `target-${sizeClass}`;
 
-            // ランダム位置（余白を確保）
             const containerRect = gameContainer.getBoundingClientRect();
-            const margin = 20; // 画面端の余白
+            const margin = 20;
             target.style.left = Math.random() * (containerRect.width - sizePixels - margin * 2) + margin + 'px';
             target.style.top = Math.random() * (containerRect.height - sizePixels - margin * 2) + margin + 'px';
 
-            // タッチ/クリック両対応
+            target.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                handleTargetClick(e); 
+            }, { passive: false });
+            
             target.addEventListener('click', handleTargetClick);
-            target.addEventListener('touchstart', (e) => { e.preventDefault(); handleTargetClick(e); });
 
             gameContainer.appendChild(target);
             gameState.currentTarget = target;
@@ -707,10 +675,14 @@
             startTargetTimer();
         }
 
-        // ゲームエリアの空クリックもタッチ対応
-        gameContainer.addEventListener('click', handleGameAreaClick);
-        gameContainer.addEventListener('touchstart', (e) => { e.preventDefault(); handleGameAreaClick(e); });
+        gameContainer.addEventListener('touchstart', (e) => { 
+            if (e.target === gameContainer || e.target.classList.contains('overlay')) {
+                e.preventDefault(); 
+                handleGameAreaClick(e); 
+            }
+        }, { passive: false });
 
+        gameContainer.addEventListener('click', handleGameAreaClick);
 
         function handleTargetClick(e) {
             if (!gameState.isGameActive) return;
@@ -727,8 +699,9 @@
             gameState.combo++;
             comboDisplay.textContent = gameState.combo;
 
+            const touch = e.touches ? e.touches[0] : e;
             const text = gameState.combo > 1 ? `COMBO x${gameState.combo} (+${points})` : `+${points}`;
-            showFeedback(e.clientX, e.clientY, text, gameState.combo > 1 ? 'combo-bonus' : 'success');
+            showFeedback(touch.clientX, touch.clientY, text, gameState.combo > 1 ? 'combo-bonus' : 'success');
 
             createTarget();
         }
@@ -745,7 +718,9 @@
             missDisplay.textContent = gameState.miss;
             gameState.combo = 0;
             comboDisplay.textContent = gameState.combo;
-            showFeedback(e.clientX, e.clientY, `MISS (-${penalty})`, 'miss');
+            
+            const touch = e.touches ? e.touches[0] : e;
+            showFeedback(touch.clientX, touch.clientY, `MISS (-${penalty})`, 'miss');
 
             createTarget();
         }
@@ -763,7 +738,7 @@
 
         function handleDifficultyClick(e) {
             const diff = e.currentTarget.dataset.difficulty;
-            if (!diff || diff === gameState.currentDifficulty) return;
+            if (!diff) return;
             document.querySelectorAll('#difficultySelection button').forEach(b => b.classList.remove('selected'));
             e.currentTarget.classList.add('selected');
             gameState.currentDifficulty = diff;
@@ -774,7 +749,7 @@
             document.querySelectorAll('#timeSelection button').forEach(b => b.classList.remove('selected'));
             e.currentTarget.classList.add('selected');
             GAME_DURATION = newTime * 1000;
-            resetGame();
+            gameTimeDisplay.textContent = (GAME_DURATION / 1000).toFixed(2);
         }
 
         function startTargetTimer() {
@@ -785,7 +760,9 @@
             const lifetime = difficultySettings[gameState.currentDifficulty].targetLifetime;
             const penalty = difficultySettings[gameState.currentDifficulty].missPenalty;
 
-            const warningTimeout = setTimeout(() => { if (target) target.classList.add('warning'); }, lifetime / 2);
+            const warningTimeout = setTimeout(() => { 
+                if (target) target.classList.add('warning'); 
+            }, lifetime / 2);
 
             gameState.targetTimer = setTimeout(() => {
                 if (target && gameState.isGameActive) {
@@ -823,13 +800,17 @@
         startButton.addEventListener('click', () => {
             if (!gameState.isGameActive) {
                 if (startButton.textContent === 'Start Game') startGame();
-                else if (startButton.textContent === 'Play Again') { resetGame(); startGame(); }
+                else if (startButton.textContent === 'Play Again') { 
+                    resetGame(); 
+                    startGame(); 
+                }
             }
         });
 
-        document.querySelectorAll('#difficultySelection button').forEach(btn => btn.addEventListener('click', handleDifficultyClick));
-        document.querySelectorAll('#timeSelection button').forEach(btn => btn.addEventListener('click', handleTimeClick));
-        gameContainer.addEventListener('click', handleGameAreaClick);
+        document.querySelectorAll('#difficultySelection button').forEach(btn => 
+            btn.addEventListener('click', handleDifficultyClick));
+        document.querySelectorAll('#timeSelection button').forEach(btn => 
+            btn.addEventListener('click', handleTimeClick));
 
         resetGame();
     </script>
