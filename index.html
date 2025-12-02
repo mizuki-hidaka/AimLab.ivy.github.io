@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AimLab - Target Clicking Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            background-color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ヘッダー */
+        .header {
+            background-color: #ffffff;
+            border-bottom: 2px solid #333333;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333333;
+            letter-spacing: -0.5px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333333;
+            line-height: 1;
+        }
+
+        .stat-value.score {
+            color: #2563eb;
+        }
+
+        .stat-value.miss {
+            color: #dc2626;
+        }
+
+        /* 新しいタイマー表示のスタイル */
+        .stat-value.game-time {
+            color: #059669;
+        }
+
+        /* 新しいコンボ表示のスタイル */
+        .stat-value.combo {
+            color: #f59e0b;
+            /* 黄色/オレンジ系 */
+            font-size: 30px;
+            /* 少し小さめに */
+        }
+
+        .stat-item.combo .stat-label {
+            color: #f59e0b;
+        }
+
+        /* ゲームエリア */
+        .game-container {
+            flex: 1;
+            position: relative;
+            background-color: #ffffff;
+            cursor: crosshair;
+        }
+
+        /* ターゲット */
+        .target {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 24px;
+            user-select: none;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: targetAppear 0.3s ease-out;
+            position: relative;
+        }
+
+        /* ターゲットタイマー（ボーダー） */
+        .target::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            /* JavaScriptでanimationを制御するため、初期設定を削除 */
+            pointer-events: none;
+        }
+
+        .target.timed-out::before {
+            animation: none;
+            /* タイムアウトしたターゲットのボーダーアニメーションを停止 */
+            box-shadow: inset 0 0 0 3px rgba(100, 100, 100, 0.8);
+        }
+
+        @keyframes targetAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .target:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .target:active {
+            transform: scale(0.95);
+        }
+
+        /* タイマー警告（時間後半） */
+        .target.warning::before {
+            animation: timerWarning 1.5s linear forwards;
+        }
+
+        @keyframes timerWarning {
+            0% {
+                box-shadow: inset 0 0 0 3px rgba(255, 0, 0, 0.8);
+            }
+
+            50% {
+                box-shadow: inset 0 0 0 3px rgba(255, 100, 100, 0.8);
+            }
+
+            100% {
+                box-shadow: inset 0 0 0 3px rgba(255, 0, 0, 0.8);
+            }
+        }
+
+        /* タイマー表示 */
+        .target-timer {
+            position: absolute;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* ターゲットサイズ */
+        .target-small {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+
+        .target-medium {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+
+        .target-large {
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
+        }
+
+        /* ターゲットの色パターン */
+        .target-red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .target-blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        .target-green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .target-yellow {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #333333;
+        }
+
+        .target-purple {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+        }
+
+        .target-pink {
+            background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+        }
+
+        /* フィードバック表示 */
+        .feedback {
+            position: fixed;
+            font-size: 24px;
+            font-weight: 700;
+            pointer-events: none;
+            animation: feedbackFloat 0.6s ease-out forwards;
+            z-index: 1000;
+        }
+
+        .feedback.combo-bonus {
+            font-size: 32px;
+            color: #f59e0b;
+            /* コンボボーナスはオレンジ */
+            text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+        }
+
+        @keyframes feedbackFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-40px) scale(0.8);
+            }
+        }
+
+        .feedback.success {
+            color: #2563eb;
+        }
+
+        .feedback.miss {
+            color: #dc2626;
+        }
+
+        /* オーバーレイとスタート/リセット画面 */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            text-align: center;
+        }
+
+        .overlay-content h2 {
+            font-size: 36px;
+            color: #333333;
+            margin-bottom: 10px;
+        }
+
+        .overlay-content p {
+            font-size: 18px;
+            color: #666666;
+            margin-bottom: 30px;
+        }
+
+        /* 難易度選択 */
+        .difficulty-selection {
+            margin-bottom: 40px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .difficulty-selection button {
+            padding: 10px 20px;
+            background-color: #e5e7eb;
+            color: #333333;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .difficulty-selection button:hover {
+            background-color: #d1d5db;
+        }
+
+        .difficulty-selection button.selected {
+            background-color: #2563eb;
+            color: white;
+            border-color: #1d4ed8;
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        /* スタートボタン / リセットボタン（大型） */
+        .start-button,
+        .end-button {
+            padding: 15px 40px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .start-button:hover,
+        .end-button:hover {
+            background-color: #1d4ed8;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .start-button:active,
+        .end-button:active {
+            transform: translateY(0);
+        }
+
+        /* ゲーム終了スコア表示 */
+        .final-score {
+            margin-top: 20px;
+            font-size: 48px;
+            font-weight: 800;
+            color: #2563eb;
+        }
+
+        .reset-button {
+            display: none;
+            /* ゲームオーバーレイに統合するため非表示 */
+        }
+
+        /* タイマー警告表示 */
+        .timer-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 700;
+            color: #dc2626;
+            pointer-events: none;
+            animation: timerWarningPulse 0.5s ease-out;
+            z-index: 999;
+        }
+
+        @keyframes timerWarningPulse {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+
+            .title {
+                font-size: 22px;
+            }
+
+            .stats {
+                gap: 20px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .stat-value.combo {
+                font-size: 24px;
+            }
+
+            .target-small {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+
+            .target-medium {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            .target-large {
+                width: 65px;
+                height: 65px;
+                font-size: 24px;
+            }
+
+            .start-button,
+            .end-button {
+                padding: 10px 20px;
+                font-size: 18px;
+            }
+
+            .overlay-content h2 {
+                font-size: 28px;
+            }
+
+            .final-score {
+                font-size: 40px;
+            }
+        }
+
+        /* ... 既存のCSS ... */
+
+        .selection-group {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .selection-group h3 {
+            margin-bottom: 10px;
+            color: #fff;
+            font-size: 1.2em;
+        }
+
+        /* 難易度/時間選択ボタンの共通スタイル */
+        #difficultySelection button,
+        #timeSelection button {
+            background: #444;
+            color: #ddd;
+            border: 2px solid #666;
+            padding: 8px 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        #difficultySelection button:hover,
+        #timeSelection button:hover {
+            background: #555;
+            border-color: #aaa;
+        }
+
+        #difficultySelection button.selected,
+        #timeSelection button.selected {
+            background: #00bcd4;
+            /* シアン系の色 */
+            color: #000;
+            border-color: #fff;
+            font-weight: bold;
+            transform: scale(1.05);
+        }
+
+        #homeButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="title">AimLab Clone</div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Time</div>
+                <div class="stat-value game-time" id="gameTimeValue">30.00</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Score</div>
+                <div class="stat-value score" id="scoreValue">0</div>
+            </div>
+            <div class="stat-item combo">
+                <div class="stat-label">Combo</div>
+                <div class="stat-value combo" id="comboValue">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Miss</div>
+                <div class="stat-value miss" id="missValue">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container" id="gameContainer">
+        <div class="overlay" id="overlayGame">
+            <div class="overlay-content">
+                <h2 id="overlayTitle">Welcome to Aim Training!</h2>
+                <p id="overlayMessage">Click the targets as fast as you can. Choose time and difficulty:</p>
+
+                <div id="timeSelection" class="selection-group">
+                    <h3>⏰ Game Time</h3>
+                    <button data-time="15" class="time-button">15s</button>
+                    <button data-time="30" class="time-button selected">30s</button>
+                    <button data-time="45" class="time-button">45s</button>
+                    <button data-time="60" class="time-button">60s</button>
+                </div>
+
+                <div id="difficultySelection" class="difficulty-selection selection-group">
+                    <h3>⚙️ Difficulty</h3>
+                    <button data-difficulty="easy">Easy</button>
+                    <button data-difficulty="normal" class="selected">Normal</button>
+                    <button data-difficulty="hard">Hard</button>
+                </div>
+
+                <button class="start-button" id="startButton">Start Game</button>
+                <div class="final-score" id="finalScore" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let GAME_DURATION = 30000;
+
+        const difficultySettings = {
+            easy: { defaultSize: 'large', targetLifetime: 4000, scoreMultiplier: 0.5, comboBonus: 0.5, missPenalty: 5, message: 'Large targets, long lifetime (4.0s). Good for beginners.' },
+            normal: { defaultSize: 'medium', targetLifetime: 3000, scoreMultiplier: 1.0, comboBonus: 1.0, missPenalty: 10, message: 'Medium targets, standard lifetime (3.0s). Balanced difficulty.' },
+            hard: { defaultSize: 'small', targetLifetime: 2000, scoreMultiplier: 1.5, comboBonus: 1.5, missPenalty: 15, message: 'Small targets, short lifetime (2.0s). Challenge your precision!' }
+        };
+
+        const gameState = {
+            score: 0, miss: 0, combo: 0,
+            currentDifficulty: 'normal', currentTarget: null,
+            isGameActive: false, targetTimer: null, gameTimer: null,
+            gameStartTime: null
+        };
+
+        const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'];
+
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreDisplay = document.getElementById('scoreValue');
+        const missDisplay = document.getElementById('missValue');
+        const comboDisplay = document.getElementById('comboValue');
+        const gameTimeDisplay = document.getElementById('gameTimeValue');
+        const startButton = document.getElementById('startButton');
+        const overlayGame = document.getElementById('overlayGame');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const difficultySelection = document.getElementById('difficultySelection');
+        const timeSelection = document.getElementById('timeSelection');
+
+        const sizeScoreMap = { 'target-small': 3, 'target-medium': 2, 'target-large': 1 };
+
+        function resetGame() {
+            gameState.isGameActive = false;
+            gameState.score = 0;
+            gameState.combo = 0;
+            gameState.miss = 0;
+
+            scoreDisplay.textContent = 0;
+            comboDisplay.textContent = 0;
+            missDisplay.textContent = 0;
+
+            clearInterval(gameState.gameTimer);
+            if (gameState.currentTarget) { gameState.currentTarget.remove(); gameState.currentTarget = null; }
+
+            overlayTitle.textContent = "Ready to start?";
+            overlayMessage.textContent = "Select time and difficulty, then press Start Game!";
+            startButton.textContent = "Start Game";
+            startButton.classList.add("start-button");
+            startButton.classList.remove("end-button");
+
+            difficultySelection.style.display = "flex";
+            timeSelection.style.display = "flex";
+
+            let homeBtn = document.getElementById("homeButton");
+            if (homeBtn) homeBtn.style.display = "none";
+
+            overlayGame.style.display = "flex";
+        }
+
+        function startGame() {
+            gameState.isGameActive = true;
+            overlayGame.style.display = 'none';
+            difficultySelection.style.display = 'none';
+            timeSelection.style.display = 'none';
+            gameState.gameStartTime = Date.now();
+            startGlobalTimer();
+            createTarget();
+        }
+
+        function startGlobalTimer() {
+            clearInterval(gameState.gameTimer);
+            gameState.gameTimer = setInterval(() => {
+                const elapsed = Date.now() - gameState.gameStartTime;
+                const remaining = GAME_DURATION - elapsed;
+                if (remaining <= 0) { clearInterval(gameState.gameTimer); gameTimeDisplay.textContent = '0.00'; endGame(); return; }
+                gameTimeDisplay.textContent = (remaining / 1000).toFixed(2);
+            }, 10);
+        }
+
+        function endGame() {
+            gameState.isGameActive = false;
+            stopTargetTimer();
+            if (gameState.currentTarget) { gameState.currentTarget.remove(); gameState.currentTarget = null; }
+
+            overlayTitle.textContent = 'Game Over!';
+            overlayMessage.textContent = `Time is up! You clicked ${gameState.score} targets. Missed: ${gameState.miss}.`;
+            finalScoreDisplay.textContent = `Final Score: ${gameState.score}`;
+            finalScoreDisplay.style.display = 'block';
+            startButton.textContent = 'Play Again';
+            startButton.classList.remove('start-button'); startButton.classList.add('end-button');
+
+            showHomeButton();
+            overlayGame.style.display = 'flex';
+        }
+
+        function showHomeButton() {
+            let homeBtn = document.getElementById("homeButton");
+            if (!homeBtn) {
+                homeBtn = document.createElement("button");
+                homeBtn.id = "homeButton";
+                homeBtn.textContent = "🏠 Home";
+                homeBtn.className = "end-button";
+                homeBtn.style.marginTop = "10px";
+                overlayGame.appendChild(homeBtn);
+            }
+            homeBtn.style.display = "block";
+            homeBtn.onclick = () => { resetGame(); homeBtn.style.display = "none"; };
+        }
+
+        function getRandomSize() {
+            // 難易度に応じて固定サイズを返す（ランダム要素なし）
+            return difficultySettings[gameState.currentDifficulty].defaultSize;
+        }
+
+        function getSizeInPixels(sizeClass) {
+            const sizeMap = { 'target-small': 40, 'target-medium': 60, 'target-large': 80 };
+            return sizeMap[sizeClass];
+        }
+
+        function createTarget() {
+            if (!gameState.isGameActive) return;
+            if (gameState.currentTarget) gameState.currentTarget.remove();
+
+            const target = document.createElement('div');
+            target.className = 'target';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            target.classList.add(`target-${color}`);
+
+            // スマホ対応サイズ調整
+            const sizeClass = getRandomSize();
+            let sizePixels = getSizeInPixels(`target-${sizeClass}`);
+            if (window.innerWidth <= 768) { // スマホの場合
+                sizePixels = sizePixels * 1.2; // 1.2倍にして押しやすく
+            }
+            target.classList.add(`target-${sizeClass}`);
+            target.dataset.sizeClass = `target-${sizeClass}`;
+
+            // ランダム位置（余白を確保）
+            const containerRect = gameContainer.getBoundingClientRect();
+            const margin = 20; // 画面端の余白
+            target.style.left = Math.random() * (containerRect.width - sizePixels - margin * 2) + margin + 'px';
+            target.style.top = Math.random() * (containerRect.height - sizePixels - margin * 2) + margin + 'px';
+
+            // タッチ/クリック両対応
+            target.addEventListener('click', handleTargetClick);
+            target.addEventListener('touchstart', (e) => { e.preventDefault(); handleTargetClick(e); });
+
+            gameContainer.appendChild(target);
+            gameState.currentTarget = target;
+
+            startTargetTimer();
+        }
+
+        // ゲームエリアの空クリックもタッチ対応
+        gameContainer.addEventListener('click', handleGameAreaClick);
+        gameContainer.addEventListener('touchstart', (e) => { e.preventDefault(); handleGameAreaClick(e); });
+
+
+        function handleTargetClick(e) {
+            if (!gameState.isGameActive) return;
+            e.stopPropagation();
+
+            const sizeClass = e.currentTarget.dataset.sizeClass;
+            const baseScore = sizeScoreMap[sizeClass] || 1;
+            const multiplier = difficultySettings[gameState.currentDifficulty].scoreMultiplier;
+            const comboBonus = gameState.combo > 0 ? gameState.combo * difficultySettings[gameState.currentDifficulty].comboBonus : 0;
+            const points = Math.round(baseScore * multiplier) + Math.round(comboBonus);
+
+            gameState.score += points;
+            scoreDisplay.textContent = gameState.score;
+            gameState.combo++;
+            comboDisplay.textContent = gameState.combo;
+
+            const text = gameState.combo > 1 ? `COMBO x${gameState.combo} (+${points})` : `+${points}`;
+            showFeedback(e.clientX, e.clientY, text, gameState.combo > 1 ? 'combo-bonus' : 'success');
+
+            createTarget();
+        }
+
+        function handleGameAreaClick(e) {
+            if (!gameState.isGameActive) return;
+            if (e.target.classList.contains('target')) return;
+            if (e.target.closest('.overlay')) return;
+
+            const penalty = difficultySettings[gameState.currentDifficulty].missPenalty;
+            gameState.score = Math.max(0, gameState.score - penalty);
+            scoreDisplay.textContent = gameState.score;
+            gameState.miss++;
+            missDisplay.textContent = gameState.miss;
+            gameState.combo = 0;
+            comboDisplay.textContent = gameState.combo;
+            showFeedback(e.clientX, e.clientY, `MISS (-${penalty})`, 'miss');
+
+            createTarget();
+        }
+
+        function showFeedback(x, y, text, type) {
+            const feedback = document.createElement('div');
+            feedback.className = `feedback ${type}`;
+            feedback.textContent = text;
+            feedback.style.left = x + 'px';
+            feedback.style.top = y + 'px';
+            feedback.style.transform = 'translate(-50%, -50%)';
+            document.body.appendChild(feedback);
+            setTimeout(() => feedback.remove(), 600);
+        }
+
+        function handleDifficultyClick(e) {
+            const diff = e.currentTarget.dataset.difficulty;
+            if (!diff || diff === gameState.currentDifficulty) return;
+            document.querySelectorAll('#difficultySelection button').forEach(b => b.classList.remove('selected'));
+            e.currentTarget.classList.add('selected');
+            gameState.currentDifficulty = diff;
+        }
+
+        function handleTimeClick(e) {
+            const newTime = parseInt(e.currentTarget.dataset.time, 10);
+            document.querySelectorAll('#timeSelection button').forEach(b => b.classList.remove('selected'));
+            e.currentTarget.classList.add('selected');
+            GAME_DURATION = newTime * 1000;
+            resetGame();
+        }
+
+        function startTargetTimer() {
+            stopTargetTimer();
+            const target = gameState.currentTarget;
+            if (!target) return;
+
+            const lifetime = difficultySettings[gameState.currentDifficulty].targetLifetime;
+            const penalty = difficultySettings[gameState.currentDifficulty].missPenalty;
+
+            const warningTimeout = setTimeout(() => { if (target) target.classList.add('warning'); }, lifetime / 2);
+
+            gameState.targetTimer = setTimeout(() => {
+                if (target && gameState.isGameActive) {
+                    gameState.score = Math.max(0, gameState.score - penalty);
+                    scoreDisplay.textContent = gameState.score;
+                    gameState.combo = 0;
+                    comboDisplay.textContent = gameState.combo;
+                    gameState.miss++;
+                    missDisplay.textContent = gameState.miss;
+                    target.classList.add('timed-out');
+                    showTimerWarning(`TIME UP! (-${penalty})`);
+                    createTarget();
+                }
+            }, lifetime);
+
+            gameState.targetTimer.warningTimeout = warningTimeout;
+        }
+
+        function stopTargetTimer() {
+            if (gameState.targetTimer) {
+                clearTimeout(gameState.targetTimer);
+                if (gameState.targetTimer.warningTimeout) clearTimeout(gameState.targetTimer.warningTimeout);
+                gameState.targetTimer = null;
+            }
+        }
+
+        function showTimerWarning(message) {
+            const warning = document.createElement('div');
+            warning.className = 'timer-warning';
+            warning.textContent = message;
+            gameContainer.appendChild(warning);
+            setTimeout(() => warning.remove(), 500);
+        }
+
+        startButton.addEventListener('click', () => {
+            if (!gameState.isGameActive) {
+                if (startButton.textContent === 'Start Game') startGame();
+                else if (startButton.textContent === 'Play Again') { resetGame(); startGame(); }
+            }
+        });
+
+        document.querySelectorAll('#difficultySelection button').forEach(btn => btn.addEventListener('click', handleDifficultyClick));
+        document.querySelectorAll('#timeSelection button').forEach(btn => btn.addEventListener('click', handleTimeClick));
+        gameContainer.addEventListener('click', handleGameAreaClick);
+
+        resetGame();
+    </script>
+</body>
+
+</html>
