@@ -6,35 +6,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AimLab - Target Clicking Game</title>
     <style>
+        /* ===========================================
+           全体のリセットと基本設定
+           =========================================== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを無効化 */
         }
 
+        /* ===========================================
+           bodyの設定 - 画面全体を使用
+           =========================================== */
         body {
             width: 100%;
             height: 100vh;
             background-color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            overflow: hidden;
+            overflow: hidden; /* スクロールを防止 */
             display: flex;
             flex-direction: column;
-            touch-action: none;
+            touch-action: none; /* タッチ操作によるズームなどを防止 */
         }
 
+        /* ===========================================
+           ヘッダーエリア - スコアや時間を表示
+           =========================================== */
         .header {
             background-color: #ffffff;
             border-bottom: 2px solid #333333;
             padding: 12px 15px;
             display: flex;
-            justify-content: space-between;
+            justify-content: space-between; /* タイトルと統計を左右に配置 */
             align-items: center;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            flex-shrink: 0;
+            flex-shrink: 0; /* ヘッダーのサイズを固定 */
         }
 
+        /* ゲームタイトル */
         .title {
             font-size: 18px;
             font-weight: 700;
@@ -42,18 +52,21 @@
             letter-spacing: -0.5px;
         }
 
+        /* 統計表示エリア（スコア、ミス、時間など） */
         .stats {
             display: flex;
             gap: 15px;
             align-items: center;
         }
 
+        /* 各統計項目のコンテナ */
         .stat-item {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
+        /* 統計のラベル（「Score」「Miss」など） */
         .stat-label {
             font-size: 9px;
             font-weight: 600;
@@ -63,6 +76,7 @@
             margin-bottom: 2px;
         }
 
+        /* 統計の値 */
         .stat-value {
             font-size: 20px;
             font-weight: 700;
@@ -70,52 +84,64 @@
             line-height: 1;
         }
 
+        /* スコアの色 */
         .stat-value.score {
             color: #2563eb;
         }
 
+        /* ミスカウントの色 */
         .stat-value.miss {
             color: #dc2626;
         }
 
+        /* ゲーム時間の色 */
         .stat-value.game-time {
             color: #059669;
         }
 
+        /* コンボ数の色とサイズ */
         .stat-value.combo {
             color: #f59e0b;
             font-size: 18px;
         }
 
+        /* コンボのラベル色 */
         .stat-item.combo .stat-label {
             color: #f59e0b;
         }
 
+        /* ===========================================
+           ゲームエリア - ターゲットが表示される場所
+           =========================================== */
         .game-container {
-            flex: 1;
+            flex: 1; /* 残りのスペースを全て使用 */
             position: relative;
             background-color: #ffffff;
-            cursor: crosshair;
+            cursor: crosshair; /* カーソルを照準に変更 */
             touch-action: none;
             overflow: hidden;
         }
 
+        /* ===========================================
+           ターゲット（クリックする円）のスタイル
+           =========================================== */
         .target {
             position: absolute;
-            border-radius: 50%;
+            border-radius: 50%; /* 円形にする */
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             color: white;
-            user-select: none;
+            user-select: none; /* テキスト選択を防止 */
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            animation: targetAppear 0.3s ease-out;
+            animation: targetAppear 0.3s ease-out; /* 出現アニメーション */
             touch-action: none;
         }
 
+        /* ターゲットの光沢効果 */
         .target::before {
             content: '';
             position: absolute;
@@ -125,33 +151,38 @@
             height: 100%;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-            pointer-events: none;
+            pointer-events: none; /* クリックイベントを無視 */
         }
 
+        /* タイムアウトしたターゲットの表示 */
         .target.timed-out::before {
             animation: none;
             box-shadow: inset 0 0 0 3px rgba(100, 100, 100, 0.8);
         }
 
+        /* ターゲットが出現するアニメーション */
         @keyframes targetAppear {
             from {
                 opacity: 0;
-                transform: scale(0.5);
+                transform: scale(0.5); /* 小さい状態から */
             }
             to {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1); /* 通常サイズに */
             }
         }
 
+        /* ターゲットをタップ/クリックした時の縮小効果 */
         .target:active {
             transform: scale(0.95);
         }
 
+        /* タイマー警告（残り時間が半分になった時） */
         .target.warning::before {
             animation: timerWarning 1.5s linear forwards;
         }
 
+        /* タイマー警告のアニメーション（赤く点滅） */
         @keyframes timerWarning {
             0% {
                 box-shadow: inset 0 0 0 3px rgba(255, 0, 0, 0.8);
@@ -164,6 +195,9 @@
             }
         }
 
+        /* ===========================================
+           ターゲットのサイズバリエーション
+           =========================================== */
         .target-small {
             width: 55px;
             height: 55px;
@@ -182,6 +216,9 @@
             font-size: 36px;
         }
 
+        /* ===========================================
+           ターゲットの色バリエーション
+           =========================================== */
         .target-red {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         }
@@ -196,7 +233,7 @@
 
         .target-yellow {
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #333333;
+            color: #333333; /* 黄色は背景が明るいので文字色を黒に */
         }
 
         .target-purple {
@@ -207,21 +244,26 @@
             background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
         }
 
+        /* ===========================================
+           フィードバック表示（+10、MISSなど）
+           =========================================== */
         .feedback {
             position: fixed;
             font-size: 22px;
             font-weight: 700;
-            pointer-events: none;
-            animation: feedbackFloat 0.6s ease-out forwards;
+            pointer-events: none; /* クリックイベントを無視 */
+            animation: feedbackFloat 0.6s ease-out forwards; /* 上に浮かぶアニメーション */
             z-index: 1000;
         }
 
+        /* コンボボーナスのフィードバック */
         .feedback.combo-bonus {
             font-size: 28px;
             color: #f59e0b;
             text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
         }
 
+        /* フィードバックが上に浮かんで消えるアニメーション */
         @keyframes feedbackFloat {
             0% {
                 opacity: 1;
@@ -233,14 +275,19 @@
             }
         }
 
+        /* 成功時のフィードバック色 */
         .feedback.success {
             color: #2563eb;
         }
 
+        /* ミス時のフィードバック色 */
         .feedback.miss {
             color: #dc2626;
         }
 
+        /* ===========================================
+           オーバーレイ（スタート画面、ゲームオーバー画面）
+           =========================================== */
         .overlay {
             position: absolute;
             top: 0;
@@ -257,18 +304,23 @@
             padding: 20px;
         }
 
+        /* オーバーレイのタイトル */
         .overlay-content h2 {
             font-size: 26px;
             color: #333333;
             margin-bottom: 8px;
         }
 
+        /* オーバーレイのメッセージ */
         .overlay-content p {
             font-size: 14px;
             color: #666666;
             margin-bottom: 20px;
         }
 
+        /* ===========================================
+           設定選択エリア（難易度、時間）
+           =========================================== */
         .selection-group {
             margin-bottom: 20px;
             text-align: center;
@@ -281,6 +333,7 @@
             font-size: 16px;
         }
 
+        /* 難易度選択と時間選択のボタンエリア */
         .difficulty-selection,
         #timeSelection {
             display: flex;
@@ -289,6 +342,7 @@
             flex-wrap: wrap;
         }
 
+        /* 設定ボタンのスタイル */
         #difficultySelection button,
         #timeSelection button {
             padding: 10px 18px;
@@ -304,11 +358,13 @@
             min-width: 70px;
         }
 
+        /* ボタンをタップ/クリックした時の効果 */
         #difficultySelection button:active,
         #timeSelection button:active {
             transform: scale(0.95);
         }
 
+        /* 選択中のボタンのスタイル */
         #difficultySelection button.selected,
         #timeSelection button.selected {
             background-color: #2563eb;
@@ -317,6 +373,9 @@
             box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
         }
 
+        /* ===========================================
+           スタートボタンと終了ボタン
+           =========================================== */
         .start-button,
         .end-button {
             padding: 14px 35px;
@@ -339,6 +398,7 @@
             transform: scale(0.95);
         }
 
+        /* 最終スコア表示 */
         .final-score {
             margin-top: 15px;
             font-size: 36px;
@@ -346,6 +406,7 @@
             color: #2563eb;
         }
 
+        /* タイマー警告メッセージ（TIME UP!） */
         .timer-warning {
             position: fixed;
             top: 50%;
@@ -359,6 +420,7 @@
             z-index: 999;
         }
 
+        /* タイマー警告のパルスアニメーション */
         @keyframes timerWarningPulse {
             0% {
                 opacity: 1;
@@ -370,6 +432,7 @@
             }
         }
 
+        /* ホームボタン */
         #homeButton {
             padding: 10px 20px;
             font-size: 16px;
@@ -379,6 +442,9 @@
             touch-action: manipulation;
         }
 
+        /* ===========================================
+           PC用のレスポンシブデザイン
+           =========================================== */
         @media (min-width: 769px) {
             .header {
                 padding: 20px 30px;
@@ -404,6 +470,7 @@
                 font-size: 30px;
             }
 
+            /* PC版ではターゲットを小さく */
             .target-small {
                 width: 40px;
                 height: 40px;
@@ -456,6 +523,7 @@
 </head>
 
 <body>
+    <!-- ヘッダー：スコアと時間を表示 -->
     <div class="header">
         <div class="title">AimLab Clone</div>
         <div class="stats">
@@ -478,12 +546,15 @@
         </div>
     </div>
 
+    <!-- ゲームエリア：ターゲットが表示される場所 -->
     <div class="game-container" id="gameContainer">
+        <!-- スタート画面/ゲームオーバー画面 -->
         <div class="overlay" id="overlayGame">
             <div class="overlay-content">
                 <h2 id="overlayTitle">Welcome to Aim Training!</h2>
                 <p id="overlayMessage">Tap targets as fast as you can!</p>
 
+                <!-- 時間設定 -->
                 <div id="timeSelection" class="selection-group">
                     <h3>⏰ Game Time</h3>
                     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -494,6 +565,7 @@
                     </div>
                 </div>
 
+                <!-- 難易度設定 -->
                 <div id="difficultySelection" class="difficulty-selection selection-group">
                     <h3>⚙️ Difficulty</h3>
                     <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -510,23 +582,44 @@
     </div>
 
     <script>
+        // ===========================================
+        // ゲーム設定と定数
+        // ===========================================
+        
+        // ゲームの制限時間（ミリ秒）
         let GAME_DURATION = 30000;
 
+        // 難易度ごとの設定
+        // - defaultSize: ターゲットのサイズ
+        // - targetLifetime: ターゲットが消えるまでの時間
+        // - scoreMultiplier: スコアの倍率
+        // - comboBonus: コンボボーナスの倍率
+        // - missPenalty: ミスした時のペナルティ
         const difficultySettings = {
             easy: { defaultSize: 'large', targetLifetime: 4000, scoreMultiplier: 0.5, comboBonus: 0.5, missPenalty: 5 },
             normal: { defaultSize: 'medium', targetLifetime: 3000, scoreMultiplier: 1.0, comboBonus: 1.0, missPenalty: 10 },
             hard: { defaultSize: 'small', targetLifetime: 2000, scoreMultiplier: 1.5, comboBonus: 1.5, missPenalty: 15 }
         };
 
+        // ゲームの状態を管理するオブジェクト
         const gameState = {
-            score: 0, miss: 0, combo: 0,
-            currentDifficulty: 'normal', currentTarget: null,
-            isGameActive: false, targetTimer: null, gameTimer: null,
-            gameStartTime: null
+            score: 0,              // 現在のスコア
+            miss: 0,               // ミスの回数
+            combo: 0,              // 現在のコンボ数
+            currentDifficulty: 'normal',  // 現在の難易度
+            currentTarget: null,   // 現在表示されているターゲット
+            isGameActive: false,   // ゲームが進行中かどうか
+            targetTimer: null,     // ターゲットのタイマー
+            gameTimer: null,       // ゲーム全体のタイマー
+            gameStartTime: null    // ゲーム開始時刻
         };
 
+        // ターゲットの色のバリエーション
         const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'];
 
+        // ===========================================
+        // DOM要素の取得
+        // ===========================================
         const gameContainer = document.getElementById('gameContainer');
         const scoreDisplay = document.getElementById('scoreValue');
         const missDisplay = document.getElementById('missValue');
@@ -538,72 +631,104 @@
         const difficultySelection = document.getElementById('difficultySelection');
         const timeSelection = document.getElementById('timeSelection');
 
+        // サイズごとの基本スコア
+        // 小さいターゲットほど高得点
         const sizeScoreMap = { 'target-small': 3, 'target-medium': 2, 'target-large': 1 };
 
+        // ===========================================
+        // ゲームの初期化とリセット
+        // ===========================================
         function resetGame() {
+            // ゲーム状態をリセット
             gameState.isGameActive = false;
             gameState.score = 0;
             gameState.combo = 0;
             gameState.miss = 0;
 
+            // 表示をリセット
             scoreDisplay.textContent = 0;
             comboDisplay.textContent = 0;
             missDisplay.textContent = 0;
             gameTimeDisplay.textContent = (GAME_DURATION / 1000).toFixed(2);
 
+            // タイマーをクリア
             clearInterval(gameState.gameTimer);
+            
+            // 現在のターゲットを削除
             if (gameState.currentTarget) { 
                 gameState.currentTarget.remove(); 
                 gameState.currentTarget = null; 
             }
 
+            // オーバーレイの表示を初期状態に戻す
             overlayTitle.textContent = "Ready to start?";
             overlayMessage.textContent = "Tap targets as fast as you can!";
             startButton.textContent = "Start Game";
             startButton.classList.add("start-button");
             startButton.classList.remove("end-button");
 
+            // 設定選択を表示
             difficultySelection.style.display = "block";
             timeSelection.style.display = "block";
             finalScoreDisplay.style.display = "none";
 
+            // ホームボタンを削除
             let homeBtn = document.getElementById("homeButton");
             if (homeBtn) homeBtn.remove();
 
+            // オーバーレイを表示
             overlayGame.style.display = "flex";
         }
 
+        // ===========================================
+        // ゲーム開始
+        // ===========================================
         function startGame() {
             gameState.isGameActive = true;
             overlayGame.style.display = 'none';
             gameState.gameStartTime = Date.now();
-            startGlobalTimer();
-            createTarget();
+            startGlobalTimer();  // 全体タイマーを開始
+            createTarget();      // 最初のターゲットを作成
         }
 
+        // ===========================================
+        // ゲーム全体のタイマー管理
+        // ===========================================
         function startGlobalTimer() {
             clearInterval(gameState.gameTimer);
+            
+            // 10ミリ秒ごとに時間を更新
             gameState.gameTimer = setInterval(() => {
-                const elapsed = Date.now() - gameState.gameStartTime;
-                const remaining = GAME_DURATION - elapsed;
+                const elapsed = Date.now() - gameState.gameStartTime;  // 経過時間
+                const remaining = GAME_DURATION - elapsed;              // 残り時間
+                
+                // 時間切れの場合
                 if (remaining <= 0) { 
                     clearInterval(gameState.gameTimer); 
                     gameTimeDisplay.textContent = '0.00'; 
                     endGame(); 
                     return; 
                 }
+                
+                // 残り時間を表示（小数点2桁）
                 gameTimeDisplay.textContent = (remaining / 1000).toFixed(2);
             }, 10);
         }
 
+        // ===========================================
+        // ゲーム終了
+        // ===========================================
         function endGame() {
             gameState.isGameActive = false;
-            stopTargetTimer();
+            stopTargetTimer();  // ターゲットタイマーを停止
+            
+            // 残っているターゲットを削除
             if (gameState.currentTarget) { 
                 gameState.currentTarget.remove(); 
                 gameState.currentTarget = null; 
             }
 
+            // ゲームオーバー画面を表示
             overlayTitle.textContent = 'Game Over!';
             overlayMessage.textContent = `Time is up! You hit ${gameState.score} targets. Missed: ${gameState.miss}.`;
             finalScoreDisplay.textContent = `Final Score: ${gameState.score}`;
@@ -612,13 +737,17 @@
             startButton.classList.remove('start-button'); 
             startButton.classList.add('end-button');
 
+            // 設定選択を非表示
             difficultySelection.style.display = 'none';
             timeSelection.style.display = 'none';
 
-            showHomeButton();
+            showHomeButton();  // ホームボタンを表示
             overlayGame.style.display = 'flex';
         }
 
+        // ===========================================
+        // ホームボタンの表示
+        // ===========================================
         function showHomeButton() {
             let homeBtn = document.getElementById("homeButton");
             if (!homeBtn) {
@@ -631,56 +760,81 @@
             homeBtn.onclick = () => { resetGame(); };
         }
 
+        // ===========================================
+        // ターゲットのサイズ取得
+        // ===========================================
         function getRandomSize() {
+            // 現在の難易度に応じたサイズを返す
             return difficultySettings[gameState.currentDifficulty].defaultSize;
         }
 
+        // サイズクラスからピクセル値を取得
         function getSizeInPixels(sizeClass) {
+            // スマホ用のサイズマップ
             const sizeMap = { 'target-small': 55, 'target-medium': 75, 'target-large': 95 };
+            
+            // PC画面の場合は小さいサイズを使用
             if (window.innerWidth > 768) {
                 return { 'target-small': 40, 'target-medium': 60, 'target-large': 80 }[sizeClass];
             }
             return sizeMap[sizeClass];
         }
 
+        // ===========================================
+        // ターゲットの作成
+        // ===========================================
         function createTarget() {
             if (!gameState.isGameActive) return;
+            
+            // 既存のターゲットを削除
             if (gameState.currentTarget) gameState.currentTarget.remove();
 
+            // 新しいターゲット要素を作成
             const target = document.createElement('div');
             target.className = 'target';
+            
+            // ランダムな色を選択
             const color = colors[Math.floor(Math.random() * colors.length)];
             target.classList.add(`target-${color}`);
 
+            // サイズを設定
             const sizeClass = getRandomSize();
             const sizePixels = getSizeInPixels(`target-${sizeClass}`);
             target.classList.add(`target-${sizeClass}`);
             target.dataset.sizeClass = `target-${sizeClass}`;
 
+            // ランダムな位置に配置（画面外に出ないように調整）
             const containerRect = gameContainer.getBoundingClientRect();
             const margin = 20;
             target.style.left = Math.random() * (containerRect.width - sizePixels - margin * 2) + margin + 'px';
             target.style.top = Math.random() * (containerRect.height - sizePixels - margin * 2) + margin + 'px';
 
-            // タッチイベントを先に処理
+            // タッチイベントを設定（スマホ用）
             target.addEventListener('touchend', (e) => { 
                 e.preventDefault();
                 e.stopPropagation();
                 handleTargetClick(e); 
             }, { passive: false });
             
-            // クリックイベント（PC用）
+            // クリックイベントを設定（PC用）
             target.addEventListener('click', (e) => {
                 e.stopPropagation();
                 handleTargetClick(e);
             });
 
+            // ターゲットをゲームエリアに追加
             gameContainer.appendChild(target);
             gameState.currentTarget = target;
 
+            // ターゲットのタイマーを開始
             startTargetTimer();
         }
 
+        // ===========================================
+        // ゲームエリアのクリック/タッチイベント（空振り検知）
+        // ===========================================
+        
+        // タッチイベント（スマホ用）
         gameContainer.addEventListener('touchend', (e) => { 
             if (e.target === gameContainer) {
                 e.preventDefault();
@@ -689,58 +843,85 @@
             }
         }, { passive: false });
 
+        // クリックイベント（PC用）
         gameContainer.addEventListener('click', (e) => {
             if (e.target === gameContainer) {
                 handleGameAreaClick(e);
             }
         });
 
+        // ===========================================
+        // ターゲットをクリック/タップした時の処理
+        // ===========================================
         function handleTargetClick(e) {
             if (!gameState.isGameActive) return;
 
+            // ターゲットのサイズから基本スコアを取得
             const sizeClass = e.currentTarget.dataset.sizeClass;
             const baseScore = sizeScoreMap[sizeClass] || 1;
+            
+            // 難易度による倍率を適用
             const multiplier = difficultySettings[gameState.currentDifficulty].scoreMultiplier;
+            
+            // コンボボーナスを計算
             const comboBonus = gameState.combo > 0 ? gameState.combo * difficultySettings[gameState.currentDifficulty].comboBonus : 0;
+            
+            // 最終的な獲得ポイント
             const points = Math.round(baseScore * multiplier) + Math.round(comboBonus);
 
+            // スコアとコンボを更新
             gameState.score += points;
             scoreDisplay.textContent = gameState.score;
             gameState.combo++;
             comboDisplay.textContent = gameState.combo;
 
-            // タッチとクリックの両方に対応
+            // クリック位置を取得（タッチとクリックの両方に対応）
             const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
             const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
             
+            // フィードバックメッセージを表示
             const text = gameState.combo > 1 ? `COMBO x${gameState.combo} (+${points})` : `+${points}`;
             showFeedback(clientX, clientY, text, gameState.combo > 1 ? 'combo-bonus' : 'success');
 
+            // 次のターゲットを作成
             createTarget();
         }
 
+        // ===========================================
+        // ゲームエリアを空振りした時の処理
+        // ===========================================
         function handleGameAreaClick(e) {
             if (!gameState.isGameActive) return;
             if (e.target.classList.contains('target')) return;
             if (e.target.closest('.overlay')) return;
 
+            // ペナルティを適用
             const penalty = difficultySettings[gameState.currentDifficulty].missPenalty;
             gameState.score = Math.max(0, gameState.score - penalty);
             scoreDisplay.textContent = gameState.score;
+            
+            // ミスカウントを増加
             gameState.miss++;
             missDisplay.textContent = gameState.miss;
+            
+            // コンボをリセット
             gameState.combo = 0;
             comboDisplay.textContent = gameState.combo;
             
-            // タッチとクリックの両方に対応
+            // クリック位置を取得（タッチとクリックの両方に対応）
             const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
             const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
             
+            // ミスのフィードバックを表示
             showFeedback(clientX, clientY, `MISS (-${penalty})`, 'miss');
 
+            // 次のターゲットを作成
             createTarget();
         }
 
+        // ===========================================
+        // フィードバック表示（+10、MISSなどのテキスト）
+        // ===========================================
         function showFeedback(x, y, text, type) {
             const feedback = document.createElement('div');
             feedback.className = `feedback ${type}`;
@@ -749,54 +930,96 @@
             feedback.style.top = y + 'px';
             feedback.style.transform = 'translate(-50%, -50%)';
             document.body.appendChild(feedback);
+            
+            // 0.6秒後に自動的に削除
             setTimeout(() => feedback.remove(), 600);
         }
 
+        // ===========================================
+        // 難易度選択ボタンのクリック処理
+        // ===========================================
         function handleDifficultyClick(e) {
             const diff = e.currentTarget.dataset.difficulty;
             if (!diff) return;
+            
+            // 全ボタンの選択状態を解除
             document.querySelectorAll('#difficultySelection button').forEach(b => b.classList.remove('selected'));
+            
+            // クリックされたボタンを選択状態に
             e.currentTarget.classList.add('selected');
+            
+            // ゲーム状態を更新
             gameState.currentDifficulty = diff;
         }
 
+        // ===========================================
+        // 時間選択ボタンのクリック処理
+        // ===========================================
         function handleTimeClick(e) {
             const newTime = parseInt(e.currentTarget.dataset.time, 10);
+            
+            // 全ボタンの選択状態を解除
             document.querySelectorAll('#timeSelection button').forEach(b => b.classList.remove('selected'));
+            
+            // クリックされたボタンを選択状態に
             e.currentTarget.classList.add('selected');
+            
+            // ゲーム時間を更新
             GAME_DURATION = newTime * 1000;
             gameTimeDisplay.textContent = (GAME_DURATION / 1000).toFixed(2);
         }
 
+        // ===========================================
+        // ターゲットのタイマー管理
+        // ===========================================
         function startTargetTimer() {
-            stopTargetTimer();
+            stopTargetTimer();  // 既存のタイマーを停止
+            
             const target = gameState.currentTarget;
             if (!target) return;
 
+            // 難易度からターゲットの寿命を取得
             const lifetime = difficultySettings[gameState.currentDifficulty].targetLifetime;
             const penalty = difficultySettings[gameState.currentDifficulty].missPenalty;
 
+            // 残り時間が半分になったら警告を表示
             const warningTimeout = setTimeout(() => { 
                 if (target) target.classList.add('warning'); 
             }, lifetime / 2);
 
+            // タイムアウト時の処理
             gameState.targetTimer = setTimeout(() => {
                 if (target && gameState.isGameActive) {
+                    // ペナルティを適用
                     gameState.score = Math.max(0, gameState.score - penalty);
                     scoreDisplay.textContent = gameState.score;
+                    
+                    // コンボをリセット
                     gameState.combo = 0;
                     comboDisplay.textContent = gameState.combo;
+                    
+                    // ミスカウントを増加
                     gameState.miss++;
                     missDisplay.textContent = gameState.miss;
+                    
+                    // ターゲットを灰色にする
                     target.classList.add('timed-out');
+                    
+                    // 警告メッセージを表示
                     showTimerWarning(`TIME UP! (-${penalty})`);
+                    
+                    // 次のターゲットを作成
                     createTarget();
                 }
             }, lifetime);
 
+            // 警告タイマーの参照を保存
             gameState.targetTimer.warningTimeout = warningTimeout;
         }
 
+        // ===========================================
+        // ターゲットのタイマーを停止
+        // ===========================================
         function stopTargetTimer() {
             if (gameState.targetTimer) {
                 clearTimeout(gameState.targetTimer);
@@ -805,31 +1028,46 @@
             }
         }
 
+        // ===========================================
+        // タイマー警告メッセージの表示
+        // ===========================================
         function showTimerWarning(message) {
             const warning = document.createElement('div');
             warning.className = 'timer-warning';
             warning.textContent = message;
             gameContainer.appendChild(warning);
+            
+            // 0.5秒後に自動的に削除
             setTimeout(() => warning.remove(), 500);
         }
 
+        // ===========================================
+        // イベントリスナーの設定
+        // ===========================================
+        
+        // スタートボタンのクリック処理
         startButton.addEventListener('click', () => {
             if (!gameState.isGameActive) {
-                if (startButton.textContent === 'Start Game') startGame();
-                else if (startButton.textContent === 'Play Again') { 
+                if (startButton.textContent === 'Start Game') {
+                    startGame();
+                } else if (startButton.textContent === 'Play Again') { 
                     resetGame(); 
                     startGame(); 
                 }
             }
         });
 
+        // 難易度選択ボタンにイベントリスナーを追加
         document.querySelectorAll('#difficultySelection button').forEach(btn => 
             btn.addEventListener('click', handleDifficultyClick));
+        
+        // 時間選択ボタンにイベントリスナーを追加
         document.querySelectorAll('#timeSelection button').forEach(btn => 
             btn.addEventListener('click', handleTimeClick));
 
+        // ===========================================
+        // ゲームの初期化
+        // ===========================================
         resetGame();
     </script>
 </body>
-
-</html>
